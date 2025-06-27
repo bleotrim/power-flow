@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "vAf063/tgTyv+HJwAfkewEi7uuH/Zv7IdtQ2mGz93g+3oVJUhxdZF8rYT1+SWm/B7pXVQ8VaWonx7k0EDZWlzA==",
+  "success": true,
+  "projectFilePath": "/Users/leotrim/Desktop/power-flow/src/power_flow_library/PowerFLow.csproj",
+  "expectedPackageFiles": [
+    "/Users/leotrim/.nuget/packages/runtime.linux-arm.runtime.native.system.io.ports/8.0.0/runtime.linux-arm.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "/Users/leotrim/.nuget/packages/runtime.linux-arm64.runtime.native.system.io.ports/8.0.0/runtime.linux-arm64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "/Users/leotrim/.nuget/packages/runtime.linux-x64.runtime.native.system.io.ports/8.0.0/runtime.linux-x64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "/Users/leotrim/.nuget/packages/runtime.native.system.io.ports/8.0.0/runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "/Users/leotrim/.nuget/packages/runtime.osx-arm64.runtime.native.system.io.ports/8.0.0/runtime.osx-arm64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "/Users/leotrim/.nuget/packages/runtime.osx-x64.runtime.native.system.io.ports/8.0.0/runtime.osx-x64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "/Users/leotrim/.nuget/packages/system.io.ports/8.0.0/system.io.ports.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
