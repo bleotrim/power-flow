@@ -14,16 +14,6 @@ class Program
         {
             SetupSerialPort();
 
-            string loginResponse = await SendCommandAndWaitResponseAsync("login:4F7D9B2A1C8E5G0H", TimeSpan.FromSeconds(5));
-
-            if (loginResponse != "auth:ok")
-            {
-                Console.WriteLine("[X] Autenticazione fallita: " + loginResponse);
-                return;
-            }
-
-            Console.WriteLine("[✓] Autenticazione avvenuta con successo.");
-
             while (true)
             {
                 Console.Write("> ");
@@ -80,7 +70,7 @@ class Program
         try
         {
             mySerialPort.WriteLine(command);
-            Console.WriteLine($"[TX] → {command}");
+            //Console.WriteLine($"[TX] → {command}");
 
             using var cts = new CancellationTokenSource(timeout);
             using (cts.Token.Register(() => currentResponseTcs.TrySetResult("timeout")))
@@ -102,7 +92,7 @@ class Program
             var sp = (SerialPort)sender;
             string inData = sp.ReadLine().Trim();
 
-            Console.WriteLine($"[RX] ← {inData}");
+            //Console.WriteLine($"[RX] ← {inData}");
 
             currentResponseTcs?.TrySetResult(inData);
         }
