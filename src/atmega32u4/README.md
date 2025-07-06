@@ -49,7 +49,7 @@ loop() {
 }
 
 - compile a sketch:
-arduino-cli compile --fqbn arduino:avr:leonardo <setch_folder> --output ./build
+arduino-cli compile --fqbn arduino:avr:leonardo <sketch_dir_path> --output-dir <sketch_dir_path>
 
 This creates a folder build with the hex file.
 
