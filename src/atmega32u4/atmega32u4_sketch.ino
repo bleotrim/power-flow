@@ -56,7 +56,7 @@ void handleSerial() {
       String token = command.substring(6);
       if (token == AUTH_TOKEN) {
         authenticated = true;
-        Serial.println("AUTH:OK");
+        Serial.println("auth:ok");
       }
       return;
     }
@@ -70,35 +70,35 @@ void handleSerial() {
       bool statusSwitch_2 = digitalRead(SWITCH_2);
 
       if (statusSwitch_1 && !statusSwitch_2) {
-        Serial.println("SWITCH_1:ON, SWITCH_2:OFF");
+        Serial.println("switch:1:on, switch:2:off");
       } else if (!statusSwitch_1 && statusSwitch_2) {
-        Serial.println("SWITCH_1:OFF, SWITCH_2:ON");
+        Serial.println("switch:1:off, switch:2:on");
       } else if (!statusSwitch_1 && !statusSwitch_2) {
-        Serial.println("SWITCH_1:OFF, SWITCH_2:OFF");
+        Serial.println("switch:1:off, switch:2:off");
       } else if (statusSwitch_1 && statusSwitch_2) {
-        Serial.println("SWITCH_1:ON, SWITCH_2:ON");
+        Serial.println("switch:1:on, switch:2:on");
       }
     }
-    else if (command == "swtch:1:on" && authenticated) {
+    else if (command == "switch:1:on" && authenticated) {
       if (digitalRead(SWITCH_2) == HIGH) {
-        Serial.println("CMD:ERROR");
+        Serial.println("cmd:err");
       } else {
         digitalWrite(SWITCH_1, HIGH);
-        Serial.println("CMD:OK");
+        Serial.println("cmd:ok");
       }
     }
-    else if (command == "swtch:2:on" && authenticated) {
+    else if (command == "switch:2:on" && authenticated) {
       if (digitalRead(SWITCH_1) == HIGH) {
-        Serial.println("CMD:ERROR");
+        Serial.println("cmd:err");
       } else {
         digitalWrite(SWITCH_2, HIGH);
-        Serial.println("CMD:OK");
+        Serial.println("cmd:ok");
       }
     }
-    else if (command == "swtch:off" && authenticated) {
+    else if (command == "switch:a:off" && authenticated) {
       digitalWrite(SWITCH_1, LOW);
       digitalWrite(SWITCH_2, LOW);
-      Serial.println("CMD:OK");
+      Serial.println("cmd:ok");
     }
   }
 }
