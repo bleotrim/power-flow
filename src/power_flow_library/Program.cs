@@ -1,101 +1,123 @@
 ﻿using System;
 using System.IO.Ports;
 using System.Threading;
+using System.Threading.Tasks;
 
 class Program
 {
-    private static bool authenticated = false;
     private static SerialPort? mySerialPort;
-    static void Main(string[] args)
-    {
-        SetupSerialPort();
-        Authenticate();
+    private static TaskCompletionSource<string>? currentResponseTcs;
 
-        /*while (true)
+    static async Task Main(string[] args)
+    {
+        try
         {
-            Thread.Sleep(1000);
-            SendCommand("swtch:2:on");
-            Thread.Sleep(1000);
-            SendCommand("swtch:off");
-            Thread.Sleep(1000);
-        }*/
+            SetupSerialPort();
+
+            string loginResponse = await SendCommandAndWaitResponseAsync("login:4F7D9B2A1C8E5G0H", TimeSpan.FromSeconds(5));
+
+            if (loginResponse != "auth:ok")
+            {
+                Console.WriteLine("[X] Autenticazione fallita: " + loginResponse);
+                return;
+            }
+
+            Console.WriteLine("[✓] Autenticazione avvenuta con successo.");
+
+            while (true)
+            {
+                Console.Write("> ");
+                string input = Console.ReadLine()?.Trim() ?? "";
+
+                if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
+                    break;
+
+                if (!string.IsNullOrEmpty(input))
+                {
+                    string response = await SendCommandAndWaitResponseAsync(input, TimeSpan.FromSeconds(3));
+                    Console.WriteLine($"[⇄] Risposta: {response}");
+                }
+            }
+        }
+        finally
+        {
+            Cleanup();
+        }
     }
 
     private static void SetupSerialPort()
     {
         string portName = "/dev/tty.usbmodem1101";
-        mySerialPort = new SerialPort(portName);
 
-        mySerialPort.BaudRate = 9600;
-        mySerialPort.Parity = Parity.None;
-        mySerialPort.StopBits = StopBits.One;
-        mySerialPort.DataBits = 8;
-        mySerialPort.Handshake = Handshake.None;
-        mySerialPort.RtsEnable = true;
-        mySerialPort.ReadTimeout = 2000;
-
-        mySerialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-        mySerialPort.Open();
-    }
-
-    private static void SendCommand(string command)
-    {
-        if (mySerialPort.IsOpen)
+        mySerialPort = new SerialPort(portName)
         {
-            mySerialPort.WriteLine(command);
-            Console.WriteLine("Comando inviato: " + command);
-        }
-        else
+            BaudRate = 9600,
+            Parity = Parity.None,
+            StopBits = StopBits.One,
+            DataBits = 8,
+            Handshake = Handshake.None,
+            RtsEnable = true,
+            ReadTimeout = 2000,
+            WriteTimeout = 1000
+        };
+
+        mySerialPort.DataReceived += DataReceivedHandler;
+
+        if (!mySerialPort.IsOpen)
         {
-            Console.WriteLine("La porta seriale non è aperta.");
+            mySerialPort.Open();
+            Console.WriteLine($"[↯] Porta seriale {portName} aperta.");
         }
     }
 
-    private static void Authenticate()
+    private static async Task<string> SendCommandAndWaitResponseAsync(string command, TimeSpan timeout)
     {
-        SendCommand("login:4F7D9B2A1C8E5G0H");
+        if (mySerialPort?.IsOpen != true)
+            throw new InvalidOperationException("Porta seriale non disponibile.");
 
-        while (!authenticated)
-        {
-            Thread.Sleep(100);
-        }
+        currentResponseTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        if (authenticated)
-        {
-            Console.WriteLine("Autenticazione completata con successo.");
-        }
-        else
-        {
-            Console.WriteLine("Autenticazione fallita.");
-        }
-    }
-
-    private static void DataReceivedHandler(
-                        object sender,
-                        SerialDataReceivedEventArgs e)
-    {
         try
         {
-            SerialPort sp = (SerialPort)sender;
-            Thread.Sleep(100);
-            string indata = sp.ReadLine();
+            mySerialPort.WriteLine(command);
+            Console.WriteLine($"[TX] → {command}");
 
-            if (indata.Trim() == "auth:ok" && !authenticated)
+            using var cts = new CancellationTokenSource(timeout);
+            using (cts.Token.Register(() => currentResponseTcs.TrySetResult("timeout")))
             {
-                authenticated = true;
+                string response = await currentResponseTcs.Task;
+                return response;
             }
-        }
-        catch (TimeoutException)
-        {
-            Console.WriteLine("Timeout nella lettura seriale.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Errore nella lettura seriale: " + ex.Message);
+            return $"errore: {ex.Message}";
         }
-        finally
-        {
+    }
 
+    private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+    {
+        try
+        {
+            var sp = (SerialPort)sender;
+            string inData = sp.ReadLine().Trim();
+
+            Console.WriteLine($"[RX] ← {inData}");
+
+            currentResponseTcs?.TrySetResult(inData);
+        }
+        catch (Exception ex)
+        {
+            currentResponseTcs?.TrySetResult($"errore_ricezione: {ex.Message}");
+        }
+    }
+
+    private static void Cleanup()
+    {
+        if (mySerialPort?.IsOpen == true)
+        {
+            mySerialPort.Close();
+            Console.WriteLine("[↯] Porta seriale chiusa.");
         }
     }
 }
