@@ -1,120 +1,101 @@
 ﻿using System;
 using System.IO.Ports;
-using System.Text;
 using System.Threading;
 
 class Program
 {
-    private static SerialPort serialPort;
-    private static bool handshakeSuccess = false;
-
-    static void Main()
+    private static bool authenticated = false;
+    private static SerialPort? mySerialPort;
+    static void Main(string[] args)
     {
-        string portName = "/dev/ttyACM1"; // WARNING: to be changed with correct port name
-        serialPort = new SerialPort(portName, 9600);
-        serialPort.DataReceived += SerialDataReceived;
-        serialPort.Open();
-        Console.WriteLine($"Porta {portName} aperta");
+        SetupSerialPort();
+        Authenticate();
 
-        SendCommand(0x0A);
-        Console.WriteLine("Handshake inviato...");
+        /*while (true)
+        {
+            Thread.Sleep(1000);
+            SendCommand("swtch:2:on");
+            Thread.Sleep(1000);
+            SendCommand("swtch:off");
+            Thread.Sleep(1000);
+        }*/
+    }
 
-        int timeout = 3000;
-        int waited = 0;
-        while (!handshakeSuccess && waited < timeout)
+    private static void SetupSerialPort()
+    {
+        string portName = "/dev/tty.usbmodem1101";
+        mySerialPort = new SerialPort(portName);
+
+        mySerialPort.BaudRate = 9600;
+        mySerialPort.Parity = Parity.None;
+        mySerialPort.StopBits = StopBits.One;
+        mySerialPort.DataBits = 8;
+        mySerialPort.Handshake = Handshake.None;
+        mySerialPort.RtsEnable = true;
+        mySerialPort.ReadTimeout = 2000;
+
+        mySerialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+        mySerialPort.Open();
+    }
+
+    private static void SendCommand(string command)
+    {
+        if (mySerialPort.IsOpen)
+        {
+            mySerialPort.WriteLine(command);
+            Console.WriteLine("Comando inviato: " + command);
+        }
+        else
+        {
+            Console.WriteLine("La porta seriale non è aperta.");
+        }
+    }
+
+    private static void Authenticate()
+    {
+        SendCommand("login:4F7D9B2A1C8E5G0H");
+
+        while (!authenticated)
         {
             Thread.Sleep(100);
-            waited += 100;
         }
 
-        if (!handshakeSuccess)
+        if (authenticated)
         {
-            Console.WriteLine("Handshake error");
-            serialPort.Close();
-            return;
+            Console.WriteLine("Autenticazione completata con successo.");
         }
-
-        Console.WriteLine("Handshake ok. Press 0 (PB0), 1 (PB2), O (shut down both), Q (exit)");
-
-        while (true)
+        else
         {
-            Console.Write("> ");
-            string input = Console.ReadLine().Trim().ToUpper();
-            if (input == "Q") break;
-
-            switch (input)
-            {
-                case "0": SendCommand(0x11); break; // PB0 ON
-                case "1": SendCommand(0x12); break; // PB2 ON
-                case "O": SendCommand(0x13); break; // OFF
-                default:
-                    Console.WriteLine("Not valid command. Use 0, 1, O, or Q to exit.");
-                    break;
-            }
+            Console.WriteLine("Autenticazione fallita.");
         }
-
-        serialPort.Close();
-        Console.WriteLine("Connection closed.");
     }
 
-    private static void SendCommand(byte command)
-    {
-        byte[] packet = new byte[4];
-        packet[0] = 0xAA;
-        packet[1] = command;
-        packet[2] = (byte)(command ^ 0xFF);
-        packet[3] = 0x55;
-
-        serialPort.Write(packet, 0, 4);
-        Console.WriteLine($"Send comaand: 0x{command:X2}");
-    }
-
-    private static void SerialDataReceived(object sender, SerialDataReceivedEventArgs e)
+    private static void DataReceivedHandler(
+                        object sender,
+                        SerialDataReceivedEventArgs e)
     {
         try
         {
-            while (serialPort.BytesToRead >= 4)
+            SerialPort sp = (SerialPort)sender;
+            Thread.Sleep(100);
+            string indata = sp.ReadLine();
+
+            if (indata.Trim() == "auth:ok" && !authenticated)
             {
-                byte[] buffer = new byte[4];
-                serialPort.Read(buffer, 0, 4);
-
-                // Valida pacchetto
-                if (buffer[0] != 0xAA || buffer[3] != 0x55)
-                {
-                    Console.WriteLine("Not recieved correct packet");
-                    return;
-                }
-
-                byte status = buffer[1];
-                byte checksum = buffer[2];
-
-                if ((byte)(status ^ 0xFF) != checksum)
-                {
-                    Console.WriteLine("Wrong checksum");
-                    return;
-                }
-
-                if (!handshakeSuccess && status == 0x01)
-                {
-                    handshakeSuccess = true;
-                }
-
-                // Interpreta risposta
-                string msg = status switch
-                {
-                    0x01 => "OK",
-                    0x02 => "Not valid command",
-                    0x03 => "Wrong Checksum",
-                    0x04 => "Conflict (PB0/PB2 one of them already on)",
-                    _    => $"Unknown code: 0x{status:X2}"
-                };
-
-                Console.WriteLine($"-> Answer: {msg}");
+                authenticated = true;
             }
+        }
+        catch (TimeoutException)
+        {
+            Console.WriteLine("Timeout nella lettura seriale.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Recieved error: {ex.Message}");
+            Console.WriteLine("Errore nella lettura seriale: " + ex.Message);
+        }
+        finally
+        {
+
         }
     }
 }
