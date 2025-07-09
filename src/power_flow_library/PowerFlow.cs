@@ -82,4 +82,35 @@ class PowerFlow
             return false;
         }
     }
+
+    public static async Task<bool> TurnOffAllDevices()
+    {
+        using var serial = new SerialCommunicator("/dev/tty.usbmodem101");
+
+        try
+        {
+            serial.Open();
+
+            if (!await TryLogin(serial))
+            {
+                Console.WriteLine("[Errore] Autenticazione fallita.");
+                return false;
+            }
+
+            string command = $"switch:a:off";
+            string response = await serial.SendCommandAsync(command, TimeSpan.FromSeconds(3));
+
+            if (response == "cmd:ok")
+                Console.WriteLine("[↯] Tutti i dispositivi sono stati spenti con successo.");
+            else
+                Console.WriteLine($"[↯] Errore nello spegnimento: {response}");
+
+            return response == "cmd:ok";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Errore] {ex.Message}");
+            return false;
+        }
+    }
 }
