@@ -7,6 +7,7 @@ int step = 0;
 
 const String AUTH_TOKEN = "TEST";
 bool authenticated = false;
+bool lastSerialState = false;
 
 struct BlinkStep {
   bool ledOn;
@@ -48,6 +49,18 @@ void handleBlink() {
 }
 
 void handleSerial() {
+  bool currentSerialState = Serial;
+
+  // Se la porta seriale si è chiusa, resetta l'autenticazione
+  if (!currentSerialState && lastSerialState) {
+    authenticated = false;
+  }
+  lastSerialState = currentSerialState;
+
+  if (!currentSerialState) {
+    return; // Se la porta è chiusa, esci dalla funzione
+  }
+
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     command.trim();
