@@ -5,7 +5,7 @@ const int SWITCH_2 = 8;
 unsigned long previousMillis = 0;
 int step = 0;
 
-const String AUTH_TOKEN = "4F7D9B2A1C8E5G0H";
+const String AUTH_TOKEN = "TEST";
 bool authenticated = false;
 
 struct BlinkStep {
@@ -99,6 +99,11 @@ void handleSerial() {
       digitalWrite(SWITCH_1, LOW);
       digitalWrite(SWITCH_2, LOW);
       Serial.println("cmd:ok");
+    }
+    else {
+      if (authenticated) {
+        Serial.println("cmd:notfound");
+      }
     }
   }
 }
