@@ -6,6 +6,16 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        bool result = PowerFlow.TurnOnDevice(1).GetAwaiter().GetResult();
+
+        if (result)
+            Console.WriteLine("Dispositivo acceso.");
+        else
+            Console.WriteLine("Errore durante l'accensione.");
+
+        return;
+
+        // Uncomment the following lines to run the interactive console
         using var serial = new SerialCommunicator("/dev/tty.usbmodem101");
 
         try
