@@ -1,46 +1,39 @@
 ﻿using System;
 using System.Threading.Tasks;
-using SerialCommLib;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        bool result = PowerFlow.TurnOnDevice(1).GetAwaiter().GetResult();
+        var powerFlow = new PowerFlow();
 
-        if (result)
-            Console.WriteLine("Dispositivo acceso.");
-        else
-            Console.WriteLine("Errore durante l'accensione.");
+        Console.WriteLine("1: Turn on device 1");
+        Console.WriteLine("2: turn on device 2");
+        Console.WriteLine("3: turn off all devices");
+        Console.WriteLine("4: custom command");
+        Console.Write("Select an option: ");
+        
+        string input = Console.ReadLine();
 
-        return;
-
-        // Uncomment the following lines to run the interactive console
-        using var serial = new SerialCommunicator("/dev/tty.usbmodem101");
-
-        try
+        switch (input)
         {
-            serial.Open();
-            Console.WriteLine("[↯] Porta seriale aperta.");
-
-            while (true)
-            {
-                Console.Write("> ");
-                string input = Console.ReadLine()?.Trim() ?? "";
-
-                if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
-                    break;
-
-                if (!string.IsNullOrEmpty(input))
-                {
-                    string response = await serial.SendCommandAsync(input, TimeSpan.FromSeconds(3));
-                    Console.WriteLine($"[⇄] Risposta: {response}");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Errore] {ex.Message}");
+            case "1":
+                await powerFlow.TurnOnDevice(1);
+                break;
+            case "2":
+                await powerFlow.TurnOnDevice(2);
+                break;
+            case "3":
+                await powerFlow.TurnOffAllDevices();
+                break;
+            case "4":
+                Console.Write("Prompt custom command: ");
+                string customCommand = Console.ReadLine();
+                await powerFlow.SendCustomCommand(customCommand);
+                break;
+            default:
+                Console.WriteLine("Not a valid option.");
+                break;
         }
     }
 }

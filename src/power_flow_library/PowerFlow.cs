@@ -2,20 +2,22 @@ using System;
 using System.Threading.Tasks;
 using SerialCommLib;
 
-public class Status
+public class PowerFlow
 {
-    public bool Device_1 { get; set; }
-    public bool Device_2 { get; set; }
-}
-
-class PowerFlow
-{
-    private static async Task<bool> TryLogin(SerialCommunicator serial)
+    public string PortName { get; set; } = "/dev/tty.usbmodem101";
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
+    private async Task<bool> TryLogin(SerialCommunicator serial)
     {
         try
         {
             string command = "login:TEST";
-            string response = await serial.SendCommandAsync(command, TimeSpan.FromSeconds(3));
+            string response = await serial.SendCommandAsync(command, Timeout);
+
+            if (response == "auth:ok")
+                Console.WriteLine("Authentication successful.");
+            else
+                Console.WriteLine($"Authentication failed: {response}");
+
             return response == "auth:ok";
         }
         catch (Exception ex)
@@ -25,91 +27,77 @@ class PowerFlow
         }
     }
 
-    private static async Task<Status?> GetStatus(SerialCommunicator serial)
+    public async Task<bool> TurnOnDevice(int deviceNumber)
     {
-        try
-        {
-            string response = await serial.SendCommandAsync("status", TimeSpan.FromSeconds(3));
-
-            if (response == "switch:1:on, switch:2:off")
-                return new Status { Device_1 = true, Device_2 = false };
-            else if (response == "switch:1:off, switch:2:on")
-                return new Status { Device_1 = false, Device_2 = true };
-            else if (response == "switch:1:off, switch:2:off")
-                return new Status { Device_1 = false, Device_2 = false };
-            else if (response == "switch:1:on, switch:2:on")
-                return new Status { Device_1 = true, Device_2 = true };
-            else
-            {
-                Console.WriteLine($"[↯] Risposta non riconosciuta: {response}");
-                return null;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Errore] {ex.Message}");
-            return null;
-        }
-    }
-
-    public static async Task<bool> TurnOnDevice(int deviceNumber)
-    {
-        using var serial = new SerialCommunicator("/dev/tty.usbmodem101");
+        using var serial = new SerialCommunicator(PortName);
 
         try
         {
             serial.Open();
 
-            if (!await TryLogin(serial))
-            {
-                Console.WriteLine("[Errore] Autenticazione fallita.");
-                return false;
-            }
+            if (!await TryLogin(serial)) return false;
 
             string command = $"switch:{deviceNumber}:on";
-            string response = await serial.SendCommandAsync(command, TimeSpan.FromSeconds(3));
+            string response = await serial.SendCommandAsync(command, Timeout);
 
             if (response == "cmd:ok")
-                Console.WriteLine($"[↯] Dispositivo {deviceNumber} acceso con successo.");
+                Console.WriteLine($"Device {deviceNumber} turned on.");
             else
-                Console.WriteLine($"[↯] Errore nell'accensione del dispositivo {deviceNumber}: {response}");
+                Console.WriteLine($"Error: {response}");
 
             return response == "cmd:ok";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Errore] {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
             return false;
         }
     }
 
-    public static async Task<bool> TurnOffAllDevices()
+    public async Task<bool> TurnOffAllDevices()
     {
-        using var serial = new SerialCommunicator("/dev/tty.usbmodem101");
+        using var serial = new SerialCommunicator(PortName);
 
         try
         {
             serial.Open();
 
-            if (!await TryLogin(serial))
-            {
-                Console.WriteLine("[Errore] Autenticazione fallita.");
-                return false;
-            }
+            if (!await TryLogin(serial)) return false;
 
             string command = $"switch:a:off";
-            string response = await serial.SendCommandAsync(command, TimeSpan.FromSeconds(3));
+            string response = await serial.SendCommandAsync(command, Timeout);
 
             if (response == "cmd:ok")
-                Console.WriteLine("[↯] Tutti i dispositivi sono stati spenti con successo.");
+                Console.WriteLine("All devices turned off.");
             else
-                Console.WriteLine($"[↯] Errore nello spegnimento: {response}");
+                Console.WriteLine($"Error: {response}");
 
             return response == "cmd:ok";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Errore] {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> SendCustomCommand(string command)
+    {
+        using var serial = new SerialCommunicator(PortName);
+
+        try
+        {
+            serial.Open();
+
+            if (!await TryLogin(serial)) return false;
+
+            string response = await serial.SendCommandAsync(command, Timeout);
+            Console.WriteLine($"Custom command response: {response}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
             return false;
         }
     }
