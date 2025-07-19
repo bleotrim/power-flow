@@ -1,0 +1,5 @@
+.DS_Store
+src/power-flow-lib/PowerFlow/bin
+src/power-flow-lib/PowerFlow/obj
+src/power-flow-lib/PowerFlowApp/bin
+src/power-flow-lib/PowerFlowApp/obj
