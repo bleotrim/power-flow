@@ -18,7 +18,7 @@ Make sure the username exactly matches the one in your polkit rule (e.g., `"allo
 
 ## 2. Test with a polkit rule that allows everything for that user (for testing only)
 
-Edit the polkit rule file `/etc/polkit-1/rules.d/52-udisks-poweroff-user.rules` to the following:
+Edit or create the polkit rule file `/etc/polkit-1/rules.d/52-udisks-poweroff-user.rules` to the following:
 
 ```javascript
 polkit.addRule(function(action, subject) {
