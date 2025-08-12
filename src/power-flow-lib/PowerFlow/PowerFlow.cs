@@ -4,7 +4,7 @@ using SerialCommLib;
 
 public class PowerFlow
 {
-    public string PortName { get; set; } = "/dev/tty.usbmodem101";
+    public string PortName { get; set; } = "/dev/ttyACM0";
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
     private async Task<bool> TryLogin(SerialCommunicator serial)
     {

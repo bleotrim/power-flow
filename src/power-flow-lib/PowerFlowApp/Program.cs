@@ -1,47 +1,32 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using CommandLine;
 
 class Program
 {
-    static async Task Main(string[] args)
+    static async Task<int> Main(string[] args)
     {
         var powerFlow = new PowerFlow();
 
-        while (true)
-        {
-            Console.WriteLine("\nPower Flow Control Menu:");
-            Console.WriteLine("0: Exit");
-            Console.WriteLine("1: Turn on device 1");
-            Console.WriteLine("2: turn on device 2");
-            Console.WriteLine("3: turn off all devices");
-            Console.WriteLine("4: custom command");
-            Console.Write("Select an option: ");
-
-            string input = Console.ReadLine();
-
-            switch (input)
-            {
-                case "0":
-                    Console.WriteLine("Exiting...");
-                    return;
-                case "1":
-                    await powerFlow.TurnOnDevice(1);
-                    break;
-                case "2":
-                    await powerFlow.TurnOnDevice(2);
-                    break;
-                case "3":
-                    await powerFlow.TurnOffAllDevices();
-                    break;
-                case "4":
-                    Console.Write("Prompt custom command: ");
-                    string customCommand = Console.ReadLine();
-                    await powerFlow.SendCustomCommand(customCommand);
-                    break;
-                default:
-                    Console.WriteLine("Not a valid option.");
-                    break;
-            }
-        }
+        return await Parser.Default.ParseArguments<TurnOnOptions, TurnOffOptions, CustomCommandOptions>(args)
+            .MapResult(
+                async (TurnOnOptions opts) =>
+                {
+                    Console.WriteLine($"Turning on device {opts.DeviceNumber}...");
+                    bool success = await powerFlow.TurnOnDevice(opts.DeviceNumber);
+                    return success ? 0 : 1;
+                },
+                async (TurnOffOptions opts) =>
+                {
+                    Console.WriteLine("Turning off all devices...");
+                    bool success = await powerFlow.TurnOffAllDevices();
+                    return success ? 0 : 1;
+                },
+                async (CustomCommandOptions opts) =>
+                {
+                    Console.WriteLine($"Sending custom command: {opts.Command}");
+                    bool success = await powerFlow.SendCustomCommand(opts.Command);
+                    return success ? 0 : 1;
+                },
+                errs => Task.FromResult(1)
+            );
     }
 }
