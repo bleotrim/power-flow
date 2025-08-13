@@ -4,7 +4,11 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
+        var configuration = new Configuration();
         var powerFlow = new PowerFlow();
+
+        powerFlow.PortName = configuration.PortName;
+        powerFlow.Timeout = TimeSpan.FromMilliseconds(configuration.TimeoutMilliseconds);
 
         return await Parser.Default.ParseArguments<TurnOnOptions, TurnOffOptions, CustomCommandOptions>(args)
             .MapResult(
