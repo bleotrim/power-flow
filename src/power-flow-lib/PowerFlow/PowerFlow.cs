@@ -13,9 +13,7 @@ public class PowerFlow
             string command = "login:TEST";
             string response = await serial.SendCommandAsync(command, Timeout);
 
-            if (response == "auth:ok")
-                Console.WriteLine("Authentication successful.");
-            else
+            if (response != "auth:ok")
                 Console.WriteLine($"Authentication failed: {response}");
 
             return response == "auth:ok";
